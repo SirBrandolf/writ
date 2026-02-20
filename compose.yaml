@@ -10,7 +10,7 @@
 services:
   server:
     build:
-      context: .
+      context: ./client
     environment:
       NODE_ENV: production
     ports:
@@ -48,4 +48,3 @@ services:
 # secrets:
 #   db-password:
 #     file: db/password.txt
-
