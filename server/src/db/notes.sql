@@ -1,4 +1,3 @@
--- Notes table with trigger for automatic updated_at
 CREATE TABLE notes(
     note_id SERIAL PRIMARY KEY,
     formatted_content JSONB DEFAULT '{}',
