@@ -1,61 +1,83 @@
 import { Request, Response } from 'express';
-import { noteService } from '../services/notes';
-import { NoteCreateBody } from '../types';
+import { noteService } from '../services/notes.js';
+import { Note, NoteCreateBody } from '../types/index.js';
 
-export const noteController = {
-    async createNote(req: Request<{}, any, NoteCreateBody>, res: Response) {
-        try {
+type JsonError = { error: string };
+
+export const createNote = async (
+    req: Request<Record<string, never>, Note | JsonError, NoteCreateBody>,
+    res: Response<Note | JsonError>,
+): Promise<void> => {
+    try {
         const note = await noteService.createNote(req.body);
         res.status(201).json(note);
-        } catch (err) {
+    } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to create note' });
-        }
-    },
+    }
+};
 
-    async getAllNotes(_req: Request, res: Response) {
-        try {
+export const getAllNotes = async (
+    req: Request<Record<string, never>, Note[] | JsonError, Record<string, never>>,
+    res: Response<Note[] | JsonError>,
+): Promise<void> => {
+    try {
         const notes = await noteService.getAllNotes();
         res.json(notes);
-        } catch (err) {
+    } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch notes' });
-        }
-    },
+    }
+};
 
-    async getNoteById(req: Request<{ id: string }>, res: Response) {
-        try {
-        const id = parseInt(req.params.id, 10);
-        const note = await noteService.getNoteById(id);
+export const getNoteById = async (
+    req: Request<{ id: string }, Note | JsonError, Record<string, never>>,
+    res: Response<Note | JsonError>,
+): Promise<void> => {
+    try {
+        const note = await noteService.getNoteById(parseInt(req.params.id, 10));
         if (!note) {
-            return res.status(404).json({ error: 'Note not found' });
+            res.status(404).json({ error: 'Note not found' });
+            return;
         }
         res.json(note);
-        } catch (err) {
+    } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch note' });
-        }
-    },
+    }
+};
 
-    async updateNote(req: Request<{ id: string }, any, Partial<NoteCreateBody>>, res: Response) {
-        try {
-        const id = parseInt(req.params.id, 10);
-        const note = await noteService.updateNote(id, req.body);
+export const updateNote = async (
+    req: Request<{ id: string }, Note | JsonError, Partial<NoteCreateBody>>,
+    res: Response<Note | JsonError>,
+): Promise<void> => {
+    try {
+        const note = await noteService.updateNote(parseInt(req.params.id, 10), req.body);
         res.json(note);
-        } catch (err) {
+    } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to update note' });
-        }
-    },
+    }
+};
 
-    async deleteNote(req: Request<{ id: string }>, res: Response) {
-        try {
-        const id = parseInt(req.params.id, 10);
-        await noteService.deleteNote(id);
+export const deleteNote = async (
+    req: Request<{ id: string }, { message: string } | JsonError, Record<string, never>>,
+    res: Response<{ message: string } | JsonError>,
+): Promise<void> => {
+    try {
+        await noteService.deleteNote(parseInt(req.params.id, 10));
         res.json({ message: 'Note deleted successfully' });
-        } catch (err) {
+    } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to delete note' });
-        }
-    },
+    }
+};
+
+
+export const noteController = {
+    createNote,
+    getAllNotes,
+    getNoteById,
+    updateNote,
+    deleteNote,
 };
