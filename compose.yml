@@ -11,7 +11,7 @@ services:
       POSTGRES_DB: writ_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./server/src/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+      - ./server/src/db/notes.sql:/docker-entrypoint-initdb.d/notes.sql:ro
     ports:
       - '5432:5432'
 
