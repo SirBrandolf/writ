@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import notesRouter from './routes/notes';
+import notesRouter from './routes/notes.js';
 
 const app = express();
 
@@ -13,9 +13,9 @@ app.use('/notes', notesRouter);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+    res.json({ status: 'ok' });
 });
 
 app.listen(5000, () => {
-  console.log('Server is running on port 5000');
+    console.log('Server is running on port 5000');
 });
