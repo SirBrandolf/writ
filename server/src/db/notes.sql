@@ -19,5 +19,4 @@ BEFORE UPDATE ON notes
 FOR EACH ROW
 EXECUTE FUNCTION update_notes_updated_at();
 
-CREATE INDEX idx_notes_user_id ON notes(user_id);
 CREATE INDEX idx_notes_created_at ON notes(created_at DESC);
