@@ -31,8 +31,6 @@ services:
       - postgres
     ports:
       - '5001:5000'
-    volumes:
-      - ./server:/app
 
   client:
     build:
