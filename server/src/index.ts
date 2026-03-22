@@ -5,8 +5,10 @@ import notesRouter from './routes/notes.js';
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+   origin: 'http://localhost:5175'
+ }));
+ app.use(express.json());
 
 // Routes
 app.use('/notes', notesRouter);
