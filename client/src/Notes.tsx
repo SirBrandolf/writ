@@ -13,11 +13,12 @@ interface NotesProps {
 const Notes = ({ notes, listError, onNoteClick, onNewNote, onDeleteNote }: NotesProps) => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredNotes = notes.filter(
-    (note) =>
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const q = searchQuery.toLowerCase();
+  const filteredNotes = notes.filter((note) => {
+    const title = (note.title ?? '').toLowerCase();
+    const content = (note.content ?? '').toLowerCase();
+    return title.includes(q) || content.includes(q);
+  });
 
   return (
     <div className="min-h-screen bg-stone-50">
