@@ -12,26 +12,26 @@ import type { Note } from './types/Note';
  * dummy data and the handler functions with fetch() calls like:
  *
  *   // Fetch all notes
- *   const res = await fetch('http://localhost:5000/notes');
+ *   const res = await fetch('/notes');
  *   const data = await res.json();
  *   setNotes(data);
  *
  *   // Create a note (new)
- *   const res = await fetch('http://localhost:5000/notes', {
+ *   const res = await fetch('/notes', {
  *     method: 'POST',
  *     headers: { 'Content-Type': 'application/json' },
  *     body: JSON.stringify({ title: 'New Note', content: '', userId: '...' })
  *   });
  *
  *   // Update a note (save)
- *   await fetch(`http://localhost:5000/notes/${id}`, {
+ *   await fetch(`/notes/${id}`, {
  *     method: 'PUT',
  *     headers: { 'Content-Type': 'application/json' },
  *     body: JSON.stringify({ title, content })
  *   });
  *
  *   // Delete a note
- *   await fetch(`http://localhost:5000/notes/${id}`, { method: 'DELETE' });
+ *   await fetch(`/notes/${id}`, { method: 'DELETE' });
  */
 
 // Dummy data so you can see the UI right away
@@ -108,7 +108,7 @@ function App() {
    // --- Handlers (replace with API calls once backend is ready) ---
 
    const handleNewNote = async () => {
-      const res = await fetch('http://localhost:5000/notes', {
+      const res = await fetch('/notes', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({ title: '', content: '' })
@@ -119,7 +119,7 @@ function App() {
    };
 
    const handleSave = async (id: string, title: string, content: string) => {
-      const res = await fetch(`http://localhost:5000/notes/${id}`, {
+      const res = await fetch(`/notes/${id}`, {
          method: 'PUT',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({ title, content })
