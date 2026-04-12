@@ -4,12 +4,13 @@ import type { Note } from './types/Note';
 
 interface NotesProps {
   notes: Note[];
+  listError?: string | null;
   onNoteClick: (id: string) => void;
   onNewNote: () => void;
   onDeleteNote: (id: string) => void;
 }
 
-const Notes = ({ notes, onNoteClick, onNewNote, onDeleteNote }: NotesProps) => {
+const Notes = ({ notes, listError, onNoteClick, onNewNote, onDeleteNote }: NotesProps) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredNotes = notes.filter(
@@ -37,6 +38,14 @@ const Notes = ({ notes, onNoteClick, onNewNote, onDeleteNote }: NotesProps) => {
         </div>
       </header>
 
+      {listError ? (
+        <div className="max-w-3xl mx-auto px-6 pt-4">
+          <p className="text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded">
+            {listError}
+          </p>
+        </div>
+      ) : null}
+
       {/* Search */}
       <div className="max-w-3xl mx-auto px-6 pt-6">
         <input
@@ -54,11 +63,13 @@ const Notes = ({ notes, onNoteClick, onNewNote, onDeleteNote }: NotesProps) => {
       <main className="max-w-3xl mx-auto px-6 py-6">
         {filteredNotes.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-stone-300 text-sm">
-              {notes.length === 0
-                ? 'No notes yet. Create your first one.'
-                : 'No notes match your search.'}
-            </p>
+            {!listError ? (
+              <p className="text-stone-300 text-sm">
+                {notes.length === 0
+                  ? 'No notes yet. Create your first one.'
+                  : 'No notes match your search.'}
+              </p>
+            ) : null}
           </div>
         ) : (
           <div className="flex flex-col divide-y divide-stone-100">
