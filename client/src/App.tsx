@@ -3,6 +3,43 @@ import Notes from './Notes';
 import OpenNote from './OpenNote';
 import type { Note } from './types/Note';
 
+/** Row shape returned by the Express + pg API (differs from client `Note`). */
+type ApiNoteRow = {
+   note_id: number;
+   title?: string | null;
+   formatted_content?: unknown;
+   created_at: string;
+   updated_at: string;
+};
+
+function formattedContentToString(fc: unknown): string {
+   if (fc == null) return '';
+   if (typeof fc === 'string') return fc;
+   if (typeof fc === 'object' && !Array.isArray(fc) && fc !== null && 'markdown' in fc) {
+      const m = (fc as { markdown?: unknown }).markdown;
+      if (typeof m === 'string') return m;
+   }
+   if (typeof fc === 'object') return JSON.stringify(fc);
+   return String(fc);
+}
+
+function fromApiNote(row: ApiNoteRow): Note {
+   return {
+      id: String(row.note_id),
+      title: row.title ?? '',
+      content: formattedContentToString(row.formatted_content),
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+   };
+}
+
+function toApiWriteBody(title: string, content: string): { title: string; formatted_content: { markdown: string } } {
+   return {
+      title,
+      formatted_content: { markdown: content },
+   };
+}
+
 /*
  * APP STATE MANAGEMENT
  * ====================
@@ -93,7 +130,7 @@ function App() {
             if (!Array.isArray(data)) {
                throw new Error('Invalid response from server');
             }
-            return data as Note[];
+            return (data as ApiNoteRow[]).map(fromApiNote);
          })
          .then(setNotes)
          .catch((err: unknown) => {
@@ -111,21 +148,31 @@ function App() {
       const res = await fetch('/notes', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ title: '', content: '' })
+         body: JSON.stringify(toApiWriteBody('', '')),
       });
-      const newNote = await res.json();
-      setNotes([newNote, ...notes]);
-      setActiveNoteId(newNote.id);
+      const payload: unknown = await res.json();
+      if (!res.ok) {
+         console.error('Create note failed:', payload);
+         return;
+      }
+      const clientNote = fromApiNote(payload as ApiNoteRow);
+      setNotes([clientNote, ...notes]);
+      setActiveNoteId(clientNote.id);
    };
 
    const handleSave = async (id: string, title: string, content: string) => {
       const res = await fetch(`/notes/${id}`, {
          method: 'PUT',
          headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ title, content })
+         body: JSON.stringify(toApiWriteBody(title, content)),
       });
-      const updated = await res.json();
-      setNotes(notes.map(n => n.id === id ? updated : n));
+      const payload: unknown = await res.json();
+      if (!res.ok) {
+         console.error('Save note failed:', payload);
+         return;
+      }
+      const updated = fromApiNote(payload as ApiNoteRow);
+      setNotes(notes.map((n) => (n.id === id ? updated : n)));
    };
 
    const handleDelete = async (id: string) => {
