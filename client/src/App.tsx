@@ -12,26 +12,26 @@ import type { Note } from './types/Note';
  * dummy data and the handler functions with fetch() calls like:
  *
  *   // Fetch all notes
- *   const res = await fetch('http://localhost:4000/notes');
+ *   const res = await fetch('http://localhost:5000/notes');
  *   const data = await res.json();
  *   setNotes(data);
  *
  *   // Create a note (new)
- *   const res = await fetch('http://localhost:4000/notes', {
+ *   const res = await fetch('http://localhost:5000/notes', {
  *     method: 'POST',
  *     headers: { 'Content-Type': 'application/json' },
  *     body: JSON.stringify({ title: 'New Note', content: '', userId: '...' })
  *   });
  *
  *   // Update a note (save)
- *   await fetch(`http://localhost:4000/notes/${id}`, {
+ *   await fetch(`http://localhost:5000/notes/${id}`, {
  *     method: 'PUT',
  *     headers: { 'Content-Type': 'application/json' },
  *     body: JSON.stringify({ title, content })
  *   });
  *
  *   // Delete a note
- *   await fetch(`http://localhost:4000/notes/${id}`, { method: 'DELETE' });
+ *   await fetch(`http://localhost:5000/notes/${id}`, { method: 'DELETE' });
  */
 
 // Dummy data so you can see the UI right away
@@ -73,11 +73,33 @@ import type { Note } from './types/Note';
 function App() {
    const [notes, setNotes] = useState<Note[]>([]);
    const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
+   const [listError, setListError] = useState<string | null>(null);
 
    useEffect(() => {
+      setListError(null);
       fetch('/notes')
-         .then(res => res.json())
-         .then(data => setNotes(data));
+         .then(async (res) => {
+            const data: unknown = await res.json();
+            if (!res.ok) {
+               const msg =
+                  data &&
+                  typeof data === 'object' &&
+                  'error' in data &&
+                  typeof (data as { error: unknown }).error === 'string'
+                     ? (data as { error: string }).error
+                     : 'Failed to load notes';
+               throw new Error(msg);
+            }
+            if (!Array.isArray(data)) {
+               throw new Error('Invalid response from server');
+            }
+            return data as Note[];
+         })
+         .then(setNotes)
+         .catch((err: unknown) => {
+            setNotes([]);
+            setListError(err instanceof Error ? err.message : 'Failed to load notes');
+         });
    }, []);
 
    // Find the note being edited
@@ -129,6 +151,7 @@ function App() {
    return (
       <Notes
          notes={notes}
+         listError={listError}
          onNoteClick={(id) => setActiveNoteId(id)}
          onNewNote={handleNewNote}
          onDeleteNote={handleDelete}
