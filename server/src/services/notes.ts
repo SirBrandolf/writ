@@ -34,9 +34,16 @@ export const noteService = {
             values.push(body.title);
         }
 
+        if (updates.length === 0) {
+            throw new Error('At least one of "title" or "formatted_content" is required');
+        }
+
         values.push(id);
         const query = `UPDATE notes SET ${updates.join(', ')} WHERE note_id = $${paramCount} RETURNING *`;
         const result = await pool.query<Note>(query, values);
+        if (result.rows.length === 0) {
+            throw new Error('Note not found');
+        }
         return result.rows[0];
     },
 

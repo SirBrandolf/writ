@@ -55,6 +55,14 @@ export const updateNote = async (
         const note = await noteService.updateNote(parseInt(req.params.id, 10), req.body);
         res.json(note);
     } catch (err) {
+        if (err instanceof Error && err.message === 'At least one of "title" or "formatted_content" is required') {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        if (err instanceof Error && err.message === 'Note not found') {
+            res.status(404).json({ error: err.message });
+            return;
+        }
         console.error(err);
         res.status(500).json({ error: 'Failed to update note' });
     }

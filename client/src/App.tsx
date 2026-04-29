@@ -182,7 +182,25 @@ function App() {
    };
 
    const handleDelete = async (id: string) => {
-      await fetch(apiUrl(`/notes/${id}`), { method: 'DELETE' });
+      const res = await fetch(apiUrl(`/notes/${id}`), { method: 'DELETE' });
+      if (!res.ok) {
+         let errorMessage = 'Delete note failed';
+         try {
+            const payload: unknown = await res.json();
+            if (
+               payload &&
+               typeof payload === 'object' &&
+               'error' in payload &&
+               typeof (payload as { error: unknown }).error === 'string'
+            ) {
+               errorMessage = (payload as { error: string }).error;
+            }
+         } catch {
+            // Ignore JSON parse errors and log default message.
+         }
+         console.error(errorMessage);
+         return;
+      }
       setNotes(notes.filter((n) => n.id !== id));
       if (activeNoteId === id) setActiveNoteId(null);
    };
