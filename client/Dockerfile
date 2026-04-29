@@ -28,6 +28,9 @@ RUN npm ci --omit=dev --legacy-peer-deps
 # Create a stage for building the application.
 FROM deps as build
 
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
 # Install development dependencies needed for the build
 COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps

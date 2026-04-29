@@ -12,6 +12,12 @@ type ApiNoteRow = {
    updated_at: string;
 };
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+
+function apiUrl(path: string): string {
+   return `${API_BASE_URL}${path}`;
+}
+
 function formattedContentToString(fc: unknown): string {
    if (fc == null) return '';
    if (typeof fc === 'string') return fc;
@@ -114,7 +120,7 @@ function App() {
 
    useEffect(() => {
       setListError(null);
-      fetch('/notes')
+      fetch(apiUrl('/notes'))
          .then(async (res) => {
             const data: unknown = await res.json();
             if (!res.ok) {
@@ -145,7 +151,7 @@ function App() {
    // --- Handlers (replace with API calls once backend is ready) ---
 
    const handleNewNote = async () => {
-      const res = await fetch('/notes', {
+      const res = await fetch(apiUrl('/notes'), {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify(toApiWriteBody('', '')),
@@ -161,7 +167,7 @@ function App() {
    };
 
    const handleSave = async (id: string, title: string, content: string) => {
-      const res = await fetch(`/notes/${id}`, {
+      const res = await fetch(apiUrl(`/notes/${id}`), {
          method: 'PUT',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify(toApiWriteBody(title, content)),
@@ -176,7 +182,7 @@ function App() {
    };
 
    const handleDelete = async (id: string) => {
-      await fetch(`/notes/${id}`, { method: 'DELETE' });
+      await fetch(apiUrl(`/notes/${id}`), { method: 'DELETE' });
       setNotes(notes.filter((n) => n.id !== id));
       if (activeNoteId === id) setActiveNoteId(null);
    };
