@@ -1,11 +1,20 @@
 import { Pool } from 'pg';
+import './env.js';
+
+function requireEnv(name: string): string {
+    const value = process.env[name];
+    if (!value) {
+        throw new Error(`Missing required environment variable: ${name}`);
+    }
+    return value;
+}
 
 const pool = new Pool({
-    user: process.env.WRIT_USER,
-    password: process.env.WRIT_PASSWORD,
+    user: requireEnv('WRIT_USER'),
+    password: requireEnv('WRIT_PASSWORD'),
     host: process.env.PGHOST || 'localhost',
     port: Number(process.env.PGPORT) || 5432,
-    database: process.env.PGDATABASE || 'writ_db',
+    database: requireEnv('PGDATABASE'),
 });
 
 export default pool;
