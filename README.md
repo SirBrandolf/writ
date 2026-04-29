@@ -1,73 +1,121 @@
-# React + TypeScript + Vite
+# Writ
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Writ is a full-stack notes app with:
 
-Currently, two official plugins are available:
+- `client`: React + Vite + TypeScript UI
+- `server`: Express + TypeScript API
+- PostgreSQL for note storage (`formatted_content` is stored as `JSONB`)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The client supports markdown and LaTeX rendering (via KaTeX) when viewing notes.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Frontend: React 19, Vite, TypeScript, Tailwind CSS
+- Backend: Express 5, TypeScript, `pg`
+- Database: PostgreSQL
+- Monorepo: npm workspaces (`client`, `server`)
 
-## Expanding the ESLint configuration
+## Project Structure
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- `client/` React app
+- `server/` Express API
+- `server/src/db/notes.sql` schema bootstrap SQL
+- `deploy/systemd/` sample systemd service files for Linux deploys
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Prerequisites
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Node.js (project services currently use Node 24 in systemd examples)
+- npm
+- PostgreSQL (local or remote)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Database Setup
+
+1. Create your database.
+2. Run the SQL in `server/src/db/notes.sql` against your database.
+
+That script creates:
+
+- `notes` table
+- update trigger for `updated_at`
+- index on `created_at`
+
+## Install
+
+From repo root:
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Run Locally
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Start client + server together (recommended)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+From repo root:
+
+```bash
+npm run dev
 ```
+
+This starts:
+
+- client dev server on `http://localhost:5175`
+- API server on `http://localhost:5000`
+
+### Start each service separately
+
+```bash
+npm run dev -w client
+npm run dev -w server
+```
+
+## Production Build and Start
+
+From repo root:
+
+```bash
+npm run build
+npm run start
+```
+
+`start` runs:
+
+- `vite preview` for the client on port `5175`
+- compiled API server on port `5000`
+
+## API Endpoints
+
+Base API URL (local): `http://localhost:5000`
+
+- `GET /health` health check
+- `POST /notes` create note
+- `GET /notes` list notes
+- `GET /notes/:id` get single note
+- `PUT /notes/:id` update note
+- `DELETE /notes/:id` delete note
+
+Example create/update payload:
+
+```json
+{
+  "title": "My note",
+  "formatted_content": {
+    "markdown": "Inline math: $x^2$"
+  }
+}
+```
+
+## Deployment Notes
+
+- Example systemd units are in `deploy/systemd/`.
+- `writ-server.service` reads env from `EnvironmentFile=/etc/app.env`.
+- `writ-client.service` serves the built frontend via `npm run preview -w client`.
+
+## Docker
+
+There are separate Dockerfiles for client and server:
+
+- `client/Dockerfile`
+- `server/Dockerfile`
+
+If you need compose-based local/prod orchestration, add a `docker-compose.yml` tailored to your infrastructure.
