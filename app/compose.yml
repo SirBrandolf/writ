@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: writ-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: writ
+      POSTGRES_PASSWORD: writ_password
+      POSTGRES_DB: writ_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/src/db/notes.sql:/docker-entrypoint-initdb.d/notes.sql:ro
+    ports:
+      - '5432:5432'
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: writ-server
+    restart: unless-stopped
+    environment:
+      WRIT_USER: writ
+      WRIT_PASSWORD: writ_password
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: writ_db
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://localhost:5175,http://127.0.0.1:5175
+    depends_on:
+      - postgres
+    ports:
+      - '5001:5000'
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:5001
+    container_name: writ-client
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    depends_on:
+      - server
+    environment:
+      - NODE_ENV=production
+
+volumes:
+  postgres_data:
