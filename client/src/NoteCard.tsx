@@ -2,7 +2,7 @@ import type { Note } from './types/Note';
 
 interface NoteCardProps {
   note: Note;
-  onClick: (id: string) => void;
+  onClick: (note: Note) => void;
   onDelete: (id: string) => void;
 }
 
@@ -28,7 +28,7 @@ const NoteCard = ({ note, onClick, onDelete }: NoteCardProps) => {
  
    return (
      <div
-       onClick={() => onClick(note.id)}
+       onClick={() => onClick(note)}
        className="group relative w-full border border-stone-200 bg-white
                   px-6 py-4 cursor-pointer transition-all duration-200
                   hover:border-stone-400 hover:shadow-sm"
@@ -65,8 +65,5 @@ const NoteCard = ({ note, onClick, onDelete }: NoteCardProps) => {
      </div>
    );
  };
- 
+
  export default NoteCard;
- 
- 
- 

@@ -1,26 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Note } from './types/Note';
-
-/*
- * LATEX RENDERING SETUP
- * =====================
- * To get LaTeX working, your team needs to install these packages:
- *
- *   npm install react-markdown remark-math rehype-katex
- *   npm install katex
- *
- * Then uncomment the imports and the RenderedContent component below,
- * and comment out the PlainRenderedContent component.
- *
- * You also need to import the KaTeX CSS in your main.tsx:
- *   import 'katex/dist/katex.min.css';
- *
- * After that, you can write LaTeX in notes like:
- *   Inline math: $x^2 + y^2 = z^2$
- *   Display math:
- *   $$\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$
- */
-
+import 'katex/dist/katex.min.css';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -58,13 +38,6 @@ const OpenNote = ({ note, onSave, onBack }: OpenNoteProps) => {
     setHasChanges(false);
     setIsEditing(false);
   };
-
-  // --- PLAIN TEXT RENDERER (use this until LaTeX packages are installed) ---
-//   const PlainRenderedContent = ({ text }: { text: string }) => (
-//     <div className="prose prose-stone max-w-none whitespace-pre-wrap leading-relaxed text-stone-700">
-//       {text || <span className="text-stone-300 italic">Click to start writing...</span>}
-//     </div>
-//   );
 
   const RenderedContent = ({ text }: { text: string }) => (
     <div className="prose prose-stone max-w-none">
@@ -161,7 +134,6 @@ const OpenNote = ({ note, onSave, onBack }: OpenNoteProps) => {
               onClick={() => setIsEditing(true)}
               className="min-h-[60vh] cursor-text"
             >
-              {/* Swap PlainRenderedContent with RenderedContent once LaTeX packages are installed */}
               <RenderedContent text={content} />
             </div>
           )}

@@ -1,16 +1,18 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import NoteCard from './NoteCard';
 import type { Note } from './types/Note';
 
 interface NotesProps {
   notes: Note[];
   listError?: string | null;
-  onNoteClick: (id: string) => void;
+  listLoading?: boolean;
+  onNoteClick: (note: Note) => void;
   onNewNote: () => void;
   onDeleteNote: (id: string) => void;
 }
 
-const Notes = ({ notes, listError, onNoteClick, onNewNote, onDeleteNote }: NotesProps) => {
+const Notes = ({ notes, listError, listLoading, onNoteClick, onNewNote, onDeleteNote }: NotesProps) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const q = searchQuery.toLowerCase();
@@ -25,9 +27,12 @@ const Notes = ({ notes, listError, onNoteClick, onNewNote, onDeleteNote }: Notes
       {/* Header */}
       <header className="border-b border-stone-200 bg-white">
         <div className="max-w-3xl mx-auto px-6 py-6 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-stone-800 tracking-[0.2em] uppercase">
+          <Link
+            to="/"
+            className="text-lg font-bold text-stone-800 tracking-[0.2em] uppercase hover:text-stone-600 transition-colors"
+          >
             Writ
-          </h1>
+          </Link>
           <button
             onClick={onNewNote}
             className="text-xs font-medium text-stone-500 border border-stone-300
@@ -62,7 +67,11 @@ const Notes = ({ notes, listError, onNoteClick, onNewNote, onDeleteNote }: Notes
 
       {/* Notes List */}
       <main className="max-w-3xl mx-auto px-6 py-6">
-        {filteredNotes.length === 0 ? (
+        {listLoading && !listError ? (
+          <div className="text-center py-20">
+            <p className="text-stone-400 text-sm">Loading notes…</p>
+          </div>
+        ) : filteredNotes.length === 0 ? (
           <div className="text-center py-20">
             {!listError ? (
               <p className="text-stone-300 text-sm">
