@@ -1,5 +1,6 @@
+/** Read/write note UI: toggles between markdown textarea + KaTeX preview (remark-math / rehype-katex). */
 import { useState, useEffect } from 'react';
-import type { Note } from './types/Note';
+import type { Note } from '../types/Note';
 import 'katex/dist/katex.min.css';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -49,7 +50,6 @@ const OpenNote = ({ note, onSave, onBack }: OpenNoteProps) => {
 
   return (
     <div className="min-h-screen bg-stone-100">
-      {/* Top bar */}
       <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/80 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <button
@@ -87,18 +87,15 @@ const OpenNote = ({ note, onSave, onBack }: OpenNoteProps) => {
         </div>
       </header>
 
-      {/* A4 Paper */}
       <main className="max-w-3xl mx-auto px-6 py-10">
         <div
           className="bg-white border border-stone-200 shadow-sm
                      min-h-[85vh] px-16 py-14"
           style={{
-            /* A4-ish proportions */
             maxWidth: '210mm',
             margin: '0 auto',
           }}
         >
-          {/* Title */}
           {isEditing ? (
             <input
               type="text"
@@ -116,10 +113,8 @@ const OpenNote = ({ note, onSave, onBack }: OpenNoteProps) => {
             </h1>
           )}
 
-          {/* Subtle divider */}
           <div className="w-16 h-px bg-stone-200 mx-auto mt-4 mb-8" />
 
-          {/* Content */}
           {isEditing ? (
             <textarea
               value={content}

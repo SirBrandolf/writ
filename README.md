@@ -1,19 +1,16 @@
 # Writ
 
-Writ is a full-stack notes app with:
+Writ is a minimal web app for writing and organizing notes as Markdown. You sign in with email and password (Firebase Authentication), browse and search your notes on one screen, and open each note in an editor that renders Markdown and math (KaTeX) when you read it back. Notes are stored in your own PostgreSQL database behind a small REST API.
 
-- `client`: React + Vite + TypeScript UI
-- `server`: Express + TypeScript API
-- PostgreSQL for note storage (`formatted_content` is stored as `JSONB`)
+## Tech stack
 
-The client supports markdown and LaTeX rendering (via KaTeX) when viewing notes.
+The repo is an **npm workspaces** monorepo with two packages. Root scripts (`npm run dev`, `npm run start`) use **concurrently** to launch the client and API side by side.
 
-## Tech Stack
+**Client (`client/`):** **Vite** dev server and production build; **React 19** + **TypeScript** + **React Router** for the SPA. Layout and styling use **Tailwind CSS**. Notes are Markdown in the editor and rendered with **react-markdown**, **remark-math**, **rehype-katex**, and **KaTeX**. **Firebase Authentication** handles email/password sign-in in the browser.
 
-- Frontend: React 19, Vite, TypeScript, Tailwind CSS
-- Backend: Express 5, TypeScript, `pg`
-- Database: PostgreSQL
-- Monorepo: npm workspaces (`client`, `server`)
+**Server (`server/`):** **Express** REST API written in **TypeScript**. Dev uses **`tsx watch`**; production runs compiled output via **`tsc`** then **`node`**. Data lives in **PostgreSQL**, accessed with **`pg`**. **`dotenv`** loads environment variables from **`app.env`** at the repo root (or paths configured in server env loading); **`cors`** gates browser origins using **`CORS_ORIGINS`**. The notes REST surface is mounted at **`/api/notes`** so it does not collide with SPA routes under **`/notes/**`.
+
+Both packages use **ESLint** for linting.
 
 ## Project Structure
 
@@ -62,6 +59,8 @@ This starts:
 - client dev server on `http://localhost:5175`
 - API server on `http://localhost:5000`
 
+The dev client proxies `/api` to the API so the browser calls `/api/notes` on the same origin.
+
 ### Start each service separately
 
 ```bash
@@ -85,14 +84,14 @@ npm run start
 
 ## API Endpoints
 
-Base API URL (local): `http://localhost:5000`
+Notes API (Express): base path **`/api/notes`** (direct to API on port `5000`, or via your reverse proxy).
 
-- `GET /health` health check
-- `POST /notes` create note
-- `GET /notes` list notes
-- `GET /notes/:id` get single note
-- `PUT /notes/:id` update note
-- `DELETE /notes/:id` delete note
+- `GET /health` — health check
+- `POST /api/notes` — create note
+- `GET /api/notes` — list notes
+- `GET /api/notes/:id` — get single note
+- `PUT /api/notes/:id` — update note
+- `DELETE /api/notes/:id` — delete note
 
 Example create/update payload:
 

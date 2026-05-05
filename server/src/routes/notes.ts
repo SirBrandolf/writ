@@ -1,3 +1,4 @@
+/** Maps HTTP verbs on /api/notes to controller handlers (mounted at /api/notes in index). */
 import { Router } from 'express';
 import { noteController } from '../controller/notes.js';
 

@@ -1,3 +1,6 @@
+/**
+ * Loads the first existing env file among WRIT_ENV_PATH, repo-root app.env, or /etc/app.env.
+ */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,7 +14,6 @@ const candidateEnvFiles = [
     process.env.WRIT_ENV_PATH,
     path.join(repoRoot, 'app.env'),
     '/etc/app.env',
-    '/etc/writ/app.env',
 ].filter((value): value is string => Boolean(value));
 
 const selectedEnvFile = candidateEnvFiles.find((filePath) => fs.existsSync(filePath));
@@ -19,6 +21,5 @@ const selectedEnvFile = candidateEnvFiles.find((filePath) => fs.existsSync(fileP
 if (selectedEnvFile) {
     dotenv.config({ path: selectedEnvFile });
 } else {
-    // Fall back to default dotenv behavior so container/env-injected configs still work.
     dotenv.config();
 }

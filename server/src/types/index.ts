@@ -1,3 +1,4 @@
+/** Row shape returned by pg for table notes (timestamps may deserialize as strings in JSON responses). */
 export interface Note {
     note_id: number;
     formatted_content: unknown;
@@ -6,6 +7,7 @@ export interface Note {
     updated_at: Date;
 }
 
+/** Request body for create/update when formatted_content is JSON (e.g. `{ markdown: string }`). */
 export interface NoteCreateBody {
     formatted_content: unknown;
     title?: string;

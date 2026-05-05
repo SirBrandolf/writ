@@ -1,3 +1,4 @@
+/** Shared pg Pool for the app; WRIT_* + PG* vars come from loaded env (see config/env). */
 import { Pool } from 'pg';
 import './env.js';
 

@@ -1,10 +1,12 @@
+/** Landing page with optional AuthBar; Writ logo uses reloadDocument so it always hits the server HTML (fresh shell). */
 import { Link } from 'react-router-dom';
+import AuthBar from './auth/AuthBar';
 
 export default function Home() {
    return (
       <div className="min-h-screen bg-stone-50 flex flex-col">
          <header className="border-b border-stone-200 bg-white">
-            <div className="max-w-3xl mx-auto px-6 py-6">
+            <div className="max-w-3xl mx-auto px-6 py-6 flex items-center justify-between gap-4">
                <Link
                   to="/"
                   reloadDocument
@@ -12,6 +14,7 @@ export default function Home() {
                >
                   Writ
                </Link>
+               <AuthBar />
             </div>
          </header>
 
@@ -20,7 +23,7 @@ export default function Home() {
                Writ is a minimal note-taking app for Markdown and math. Capture ideas, draft with clarity, and pick up
                where you left off.
             </p>
-            <div className="mt-10">
+            <div className="mt-10 flex flex-wrap items-center gap-3">
                <Link
                   to="/notes"
                   className="inline-block text-xs font-medium text-stone-500 border border-stone-300 px-4 py-2

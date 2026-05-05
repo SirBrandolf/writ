@@ -1,3 +1,4 @@
+/** Thin HTTP adapters: validate ids, map service errors to status codes, JSON bodies. */
 import { Request, Response } from 'express';
 import { noteService } from '../services/notes.js';
 import { Note, NoteCreateBody } from '../types/index.js';
@@ -73,7 +74,16 @@ export const deleteNote = async (
     res: Response<{ message: string } | JsonError>,
 ): Promise<void> => {
     try {
-        await noteService.deleteNote(parseInt(req.params.id, 10));
+        const id = parseInt(req.params.id, 10);
+        if (Number.isNaN(id)) {
+            res.status(400).json({ error: 'Invalid note id' });
+            return;
+        }
+        const deleted = await noteService.deleteNote(id);
+        if (!deleted) {
+            res.status(404).json({ error: 'Note does not exist' });
+            return;
+        }
         res.json({ message: 'Note deleted successfully' });
     } catch (err) {
         console.error(err);

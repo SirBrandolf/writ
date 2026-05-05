@@ -1,8 +1,12 @@
+/**
+ * Notes area: loads OpenNote lazily, talks to Express at NOTES_API, and routes /notes/:slug/:id deep links.
+ */
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import Notes from './Notes';
-import type { Note } from './types/Note';
+import type { Note } from '../types/Note';
 
+/** Markdown editor chunk loaded only when viewing a single note. */
 const OpenNote = lazy(() => import('./OpenNote'));
 
 const editorFallback = (
@@ -11,7 +15,7 @@ const editorFallback = (
    </div>
 );
 
-/** Row shape returned by the Express + pg API (differs from client `Note`). */
+/** One row from GET/POST/PUT /api/notes; DB uses note_id and formatted_content (often { markdown }). */
 type ApiNoteRow = {
    note_id: number;
    title?: string | null;
@@ -22,11 +26,57 @@ type ApiNoteRow = {
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
 
+/** Collection URL on Express; kept under /api so Vite never proxies browser navigations under /notes/*. */
+const NOTES_API = '/api/notes';
+
+/** Absolute or root-relative URL for API paths (empty API_BASE_URL ⇒ same origin + Vite proxy in dev). */
 function apiUrl(path: string): string {
    return `${API_BASE_URL}${path}`;
 }
 
-/** URL path segment from title; falls back to `untitled`. */
+/** Shown when GET /api/notes/:id returns 404 (deleted or invalid deep link). */
+function NoteNotFound({ onBack }: { onBack: () => void }) {
+   return (
+      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center px-6">
+         <p className="text-sm font-medium text-stone-800 tracking-wide uppercase">Note does not exist</p>
+         <p className="mt-3 text-sm text-stone-600 text-center max-w-sm leading-relaxed">
+            This note may have been deleted or the link may be wrong. You won&apos;t be able to recover it from here.
+         </p>
+         <button
+            type="button"
+            onClick={onBack}
+            className="mt-8 text-xs font-medium text-stone-500 border border-stone-300 px-4 py-2
+                       hover:bg-stone-800 hover:text-white hover:border-stone-800
+                       transition-all duration-200 tracking-wide"
+         >
+            Back to notes
+         </button>
+      </div>
+   );
+}
+
+/** Non-404 failure loading a single note (network or 5xx). */
+function NoteFetchError({ onBack }: { onBack: () => void }) {
+   return (
+      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center px-6">
+         <p className="text-sm font-medium text-stone-800 tracking-wide uppercase">Could not load note</p>
+         <p className="mt-3 text-sm text-stone-600 text-center max-w-sm leading-relaxed">
+            Something went wrong while loading this note. Try again from your notes list.
+         </p>
+         <button
+            type="button"
+            onClick={onBack}
+            className="mt-8 text-xs font-medium text-stone-500 border border-stone-300 px-4 py-2
+                       hover:bg-stone-800 hover:text-white hover:border-stone-800
+                       transition-all duration-200 tracking-wide"
+         >
+            Back to notes
+         </button>
+      </div>
+   );
+}
+
+/** Derives the middle segment of /notes/:slug/:id for readable URLs; empty titles become `untitled`. */
 function slugifyTitle(title: string): string {
    const raw = (title ?? '')
       .trim()
@@ -37,10 +87,12 @@ function slugifyTitle(title: string): string {
    return raw || 'untitled';
 }
 
+/** Canonical client path for a note (slug is recomputed when the title changes). */
 function notePath(note: Pick<Note, 'id' | 'title'>): string {
    return `/notes/${slugifyTitle(note.title)}/${note.id}`;
 }
 
+/** Converts DB formatted_content (string or { markdown }) into plain markdown for the editor. */
 function formattedContentToString(fc: unknown): string {
    if (fc == null) return '';
    if (typeof fc === 'string') return fc;
@@ -52,6 +104,7 @@ function formattedContentToString(fc: unknown): string {
    return String(fc);
 }
 
+/** Maps API row → UI Note (string id, flattened markdown body). */
 function fromApiNote(row: ApiNoteRow): Note {
    return {
       id: String(row.note_id),
@@ -62,6 +115,7 @@ function fromApiNote(row: ApiNoteRow): Note {
    };
 }
 
+/** Body shape expected by POST/PUT handlers (markdown stored as JSON in formatted_content). */
 function toApiWriteBody(title: string, content: string): { title: string; formatted_content: { markdown: string } } {
    return {
       title,
@@ -77,13 +131,21 @@ type NoteDetailProps = {
    onSave: (id: string, title: string, content: string) => Promise<void>;
 };
 
+/**
+ * Deep-linked note view: after the list loads, fetches by id if missing, fixes slug from title, surfaces 404/errors.
+ */
 function NoteDetail({ notes, setNotes, listLoading, listLoaded, onSave }: NoteDetailProps) {
    const { slug, noteId } = useParams();
    const navigate = useNavigate();
    const [fetchingSingle, setFetchingSingle] = useState(false);
+   const [singleFetchStatus, setSingleFetchStatus] = useState<'idle' | 'missing' | 'error'>('idle');
    const idValid = Boolean(noteId && /^\d+$/.test(noteId));
    const slugPresent = Boolean(slug && slug.length > 0);
    const activeNote = noteId ? notes.find((n) => n.id === noteId) : undefined;
+
+   useEffect(() => {
+      setSingleFetchStatus('idle');
+   }, [noteId]);
 
    useEffect(() => {
       if (!idValid || !listLoaded) return;
@@ -91,15 +153,15 @@ function NoteDetail({ notes, setNotes, listLoading, listLoaded, onSave }: NoteDe
 
       let cancelled = false;
       setFetchingSingle(true);
-      fetch(apiUrl(`/notes/${noteId}`))
+      fetch(apiUrl(`${NOTES_API}/${noteId}`))
          .then(async (res) => {
             if (cancelled) return;
             if (res.status === 404) {
-               navigate('/notes', { replace: true });
+               setSingleFetchStatus('missing');
                return;
             }
             if (!res.ok) {
-               navigate('/notes', { replace: true });
+               setSingleFetchStatus('error');
                return;
             }
             const row: unknown = await res.json();
@@ -107,7 +169,7 @@ function NoteDetail({ notes, setNotes, listLoading, listLoaded, onSave }: NoteDe
             setNotes((prev) => (prev.some((n) => n.id === note.id) ? prev : [note, ...prev]));
          })
          .catch(() => {
-            if (!cancelled) navigate('/notes', { replace: true });
+            if (!cancelled) setSingleFetchStatus('error');
          })
          .finally(() => {
             if (!cancelled) setFetchingSingle(false);
@@ -116,7 +178,7 @@ function NoteDetail({ notes, setNotes, listLoading, listLoaded, onSave }: NoteDe
       return () => {
          cancelled = true;
       };
-   }, [idValid, listLoaded, noteId, navigate, setNotes, notes]);
+   }, [idValid, listLoaded, noteId, setNotes, notes]);
 
    useEffect(() => {
       if (!idValid || !slugPresent || !activeNote || !noteId) return;
@@ -128,6 +190,13 @@ function NoteDetail({ notes, setNotes, listLoading, listLoaded, onSave }: NoteDe
 
    if (!idValid || !slugPresent) {
       return <Navigate to="/notes" replace />;
+   }
+
+   if (singleFetchStatus === 'missing') {
+      return <NoteNotFound onBack={() => navigate('/notes')} />;
+   }
+   if (singleFetchStatus === 'error') {
+      return <NoteFetchError onBack={() => navigate('/notes')} />;
    }
 
    if (listLoading || fetchingSingle || !activeNote) {
@@ -149,22 +218,29 @@ function NoteDetail({ notes, setNotes, listLoading, listLoaded, onSave }: NoteDe
    );
 }
 
+/** Supports older links `/notes/:id` by resolving the note then redirecting to `/notes/:slug/:id`. */
 function LegacyNoteIdRedirect({ setNotes }: { setNotes: React.Dispatch<React.SetStateAction<Note[]>> }) {
    const { noteId } = useParams();
    const navigate = useNavigate();
+   const [status, setStatus] = useState<'pending' | 'missing' | 'error'>('pending');
 
    useEffect(() => {
+      setStatus('pending');
       if (!noteId || !/^\d+$/.test(noteId)) {
          navigate('/notes', { replace: true });
          return;
       }
 
       let cancelled = false;
-      fetch(apiUrl(`/notes/${noteId}`))
+      fetch(apiUrl(`${NOTES_API}/${noteId}`))
          .then(async (res) => {
             if (cancelled) return;
+            if (res.status === 404) {
+               setStatus('missing');
+               return;
+            }
             if (!res.ok) {
-               navigate('/notes', { replace: true });
+               setStatus('error');
                return;
             }
             const row: unknown = await res.json();
@@ -173,13 +249,20 @@ function LegacyNoteIdRedirect({ setNotes }: { setNotes: React.Dispatch<React.Set
             navigate(notePath(note), { replace: true });
          })
          .catch(() => {
-            if (!cancelled) navigate('/notes', { replace: true });
+            if (!cancelled) setStatus('error');
          });
 
       return () => {
          cancelled = true;
       };
    }, [noteId, navigate, setNotes]);
+
+   if (status === 'missing') {
+      return <NoteNotFound onBack={() => navigate('/notes')} />;
+   }
+   if (status === 'error') {
+      return <NoteFetchError onBack={() => navigate('/notes')} />;
+   }
 
    return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center text-sm text-stone-500">
@@ -198,7 +281,7 @@ export default function NotesApp() {
    useEffect(() => {
       setListError(null);
       setListLoading(true);
-      fetch(apiUrl('/notes'))
+      fetch(apiUrl(NOTES_API))
          .then(async (res) => {
             const data: unknown = await res.json();
             if (!res.ok) {
@@ -228,7 +311,7 @@ export default function NotesApp() {
    }, []);
 
    const handleNewNote = useCallback(async () => {
-      const res = await fetch(apiUrl('/notes'), {
+      const res = await fetch(apiUrl(NOTES_API), {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify(toApiWriteBody('', '')),
@@ -244,7 +327,7 @@ export default function NotesApp() {
    }, [navigate]);
 
    const handleSave = useCallback(async (id: string, title: string, content: string) => {
-      const res = await fetch(apiUrl(`/notes/${id}`), {
+      const res = await fetch(apiUrl(`${NOTES_API}/${id}`), {
          method: 'PUT',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify(toApiWriteBody(title, content)),
@@ -258,31 +341,45 @@ export default function NotesApp() {
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
    }, []);
 
-   const handleDelete = useCallback(
-      async (id: string) => {
-         const res = await fetch(apiUrl(`/notes/${id}`), { method: 'DELETE' });
-         if (!res.ok) {
-            let errorMessage = 'Delete note failed';
-            try {
-               const payload: unknown = await res.json();
-               if (
-                  payload &&
-                  typeof payload === 'object' &&
-                  'error' in payload &&
-                  typeof (payload as { error: unknown }).error === 'string'
-               ) {
-                  errorMessage = (payload as { error: string }).error;
-               }
-            } catch {
-               // Ignore JSON parse errors and log default message.
-            }
-            console.error(errorMessage);
-            return;
-         }
+   const handleDelete = useCallback(async (id: string): Promise<{ ok: true } | { ok: false; message: string }> => {
+      const res = await fetch(apiUrl(`${NOTES_API}/${id}`), { method: 'DELETE' });
+
+      let payload: unknown = null;
+      try {
+         payload = await res.json();
+      } catch {
+         /* DELETE may return an empty body; parsing failure still lets us branch on status. */
+      }
+
+      if (res.status === 404) {
+         const message =
+            payload &&
+            typeof payload === 'object' &&
+            'error' in payload &&
+            typeof (payload as { error: unknown }).error === 'string'
+               ? (payload as { error: string }).error
+               : 'Note does not exist';
          setNotes((prev) => prev.filter((n) => n.id !== id));
-      },
-      [],
-   );
+         return { ok: false, message };
+      }
+
+      if (!res.ok) {
+         let errorMessage = 'Delete note failed';
+         if (
+            payload &&
+            typeof payload === 'object' &&
+            'error' in payload &&
+            typeof (payload as { error: unknown }).error === 'string'
+         ) {
+            errorMessage = (payload as { error: string }).error;
+         }
+         console.error(errorMessage);
+         return { ok: false, message: errorMessage };
+      }
+
+      setNotes((prev) => prev.filter((n) => n.id !== id));
+      return { ok: true };
+   }, []);
 
    return (
       <Routes>

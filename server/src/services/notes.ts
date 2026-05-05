@@ -1,3 +1,4 @@
+/** Postgres queries for notes; formatted_content is stored as JSON-compatible values. */
 import pool from '../config/db.js';
 import { Note, NoteCreateBody } from '../types/index.js';
 
@@ -20,6 +21,7 @@ export const noteService = {
         return result.rows[0] || null;
     },
 
+    /** Partial update: only supplied columns are written; no-op bodies throw before touching SQL. */
     async updateNote(id: number, body: Partial<NoteCreateBody>): Promise<Note> {
         const updates: string[] = [];
         const values: unknown[] = [];
@@ -47,7 +49,8 @@ export const noteService = {
         return result.rows[0];
     },
 
-    async deleteNote(id: number): Promise<void> {
-        await pool.query('DELETE FROM notes WHERE note_id = $1', [id]);
+    async deleteNote(id: number): Promise<boolean> {
+        const result = await pool.query('DELETE FROM notes WHERE note_id = $1', [id]);
+        return (result.rowCount ?? 0) > 0;
     },
 };

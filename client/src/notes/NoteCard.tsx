@@ -1,12 +1,13 @@
-import type { Note } from './types/Note';
+/** Single row in the notes list: preview strip, updated date, delete affordance (opens confirm in parent). */
+import type { Note } from '../types/Note';
 
 interface NoteCardProps {
   note: Note;
   onClick: (note: Note) => void;
-  onDelete: (id: string) => void;
+  onRequestDelete: (note: Note) => void;
 }
 
-const NoteCard = ({ note, onClick, onDelete }: NoteCardProps) => {
+const NoteCard = ({ note, onClick, onRequestDelete }: NoteCardProps) => {
    const formatDate = (dateString: string) => {
      const date = new Date(dateString);
      return date.toLocaleDateString('en-GB', {
@@ -16,13 +17,13 @@ const NoteCard = ({ note, onClick, onDelete }: NoteCardProps) => {
      });
    };
  
-   // Strip LaTeX and markdown for preview
    const getPreview = (content: string) => {
+     /* Strip markdown/LaTeX noise so the list snippet stays short and readable. */
      return content
-       .replace(/\$\$[\s\S]*?\$\$/g, '[equation]')  // block LaTeX
-       .replace(/\$[^$]*\$/g, '[math]')               // inline LaTeX
-       .replace(/#{1,6}\s/g, '')                       // headers
-       .replace(/[*_]{1,2}(.*?)[*_]{1,2}/g, '$1')     // bold/italic
+       .replace(/\$\$[\s\S]*?\$\$/g, '[equation]')
+       .replace(/\$[^$]*\$/g, '[math]')
+       .replace(/#{1,6}\s/g, '')
+       .replace(/[*_]{1,2}(.*?)[*_]{1,2}/g, '$1')
        .slice(0, 120);
    };
  
@@ -34,7 +35,6 @@ const NoteCard = ({ note, onClick, onDelete }: NoteCardProps) => {
                   hover:border-stone-400 hover:shadow-sm"
      >
        <div className="flex items-center justify-between gap-4">
-         {/* Left side: title + preview */}
          <div className="min-w-0 flex-1">
            <h3 className="text-sm font-semibold text-stone-800 tracking-wide truncate">
              {note.title || 'Untitled'}
@@ -44,7 +44,6 @@ const NoteCard = ({ note, onClick, onDelete }: NoteCardProps) => {
            </p>
          </div>
  
-         {/* Right side: date + delete */}
          <div className="flex items-center gap-3 shrink-0">
            <span className="text-[11px] text-stone-300 font-mono">
              {formatDate(note.updated_at)}
@@ -52,7 +51,7 @@ const NoteCard = ({ note, onClick, onDelete }: NoteCardProps) => {
            <button
              onClick={(e) => {
                e.stopPropagation();
-               onDelete(note.id);
+               onRequestDelete(note);
              }}
              className="opacity-0 group-hover:opacity-100 transition-opacity
                         text-stone-300 hover:text-red-400 text-xs px-1"
