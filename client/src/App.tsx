@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import Home from './Home';
 import Login from './auth/Login';
 import NotesApp from './notes/NotesApp';
+import Profile from './auth/Profile';
 import RequireAuth from './auth/RequireAuth';
 import SignUp from './auth/SignUp';
 
@@ -12,6 +13,14 @@ export default function App() {
          <Route path="/" element={<Home />} />
          <Route path="/login" element={<Login />} />
          <Route path="/signup" element={<SignUp />} />
+         <Route
+            path="/profile"
+            element={
+               <RequireAuth>
+                  <Profile />
+               </RequireAuth>
+            }
+         />
          <Route
             path="/notes/*"
             element={

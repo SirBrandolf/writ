@@ -1,5 +1,6 @@
 CREATE TABLE notes(
     note_id SERIAL PRIMARY KEY,
+    user_id TEXT NOT NULL,
     formatted_content JSONB DEFAULT '{}',
     title VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -20,3 +21,4 @@ FOR EACH ROW
 EXECUTE FUNCTION update_notes_updated_at();
 
 CREATE INDEX idx_notes_created_at ON notes(created_at DESC);
+CREATE INDEX idx_notes_user_created_at ON notes(user_id, created_at DESC);

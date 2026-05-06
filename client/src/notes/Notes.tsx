@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthBar from '../auth/AuthBar';
+import { useAuth } from '../auth/AuthContext';
 import NoteCard from './NoteCard';
 import type { Note } from '../types/Note';
 
@@ -22,7 +23,30 @@ type NotesLocationState = {
   accountCreated?: boolean;
 };
 
+function capitalizeWord(value: string): string {
+  if (!value) return value;
+  return `${value[0].toUpperCase()}${value.slice(1)}`;
+}
+
+function getFirstName(displayName: string | null | undefined, email: string | null | undefined): string {
+  const candidate = (displayName ?? '').trim();
+  if (candidate) {
+    const first = candidate.split(/\s+/)[0];
+    if (first) return first;
+  }
+
+  const emailName = (email ?? '').split('@')[0]?.trim();
+  if (emailName) {
+    const normalized = emailName.replace(/[._-]+/g, ' ');
+    const first = normalized.split(/\s+/)[0] ?? 'there';
+    return capitalizeWord(first);
+  }
+
+  return 'there';
+}
+
 const Notes = ({ notes, listError, listLoading, onNoteClick, onNewNote, onDeleteNote }: NotesProps) => {
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,6 +73,7 @@ const Notes = ({ notes, listError, listLoading, onNoteClick, onNewNote, onDelete
     const content = (note.content ?? '').toLowerCase();
     return title.includes(q) || content.includes(q);
   });
+  const firstName = getFirstName(user?.displayName, user?.email);
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -171,6 +196,12 @@ const Notes = ({ notes, listError, listLoading, onNoteClick, onNewNote, onDelete
         </div>
       </header>
 
+      <div className="max-w-3xl mx-auto px-6 pt-8 text-center">
+        <p className="text-xl font-medium text-stone-800 leading-relaxed">
+          Hello {firstName}, ready to start writing?
+        </p>
+      </div>
+
       {listError ? (
         <div className="max-w-3xl mx-auto px-6 pt-4">
           <p className="text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded">
@@ -187,7 +218,7 @@ const Notes = ({ notes, listError, listLoading, onNoteClick, onNewNote, onDelete
         </div>
       ) : null}
 
-      <div className="max-w-3xl mx-auto px-6 pt-6">
+      <div className="max-w-3xl mx-auto px-6 pt-4">
         <input
           type="text"
           placeholder="Search notes..."

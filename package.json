@@ -1,9 +1,9 @@
 {
   "name": "writ",
   "private": true,
-  "workspaces": ["client", "server"],
+  "workspaces": ["client", "server", "functions"],
   "scripts": {
-    "build": "npm run build -w client && npm run build -w server",
+    "build": "npm run build -w client && npm run build -w server && npm run build -w functions",
     "start": "concurrently -n client,server -c blue,green \"npm run preview -w client -- --host 0.0.0.0 --port 5175\" \"npm run start -w server\"",
     "dev": "concurrently -n client,server -c blue,green \"npm run dev -w client\" \"npm run dev -w server\""
   },

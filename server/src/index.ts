@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import './config/env.js';
 import notesRouter from './routes/notes.js';
+import { requireFirebaseAuth } from './middleware/requireFirebaseAuth.js';
 
 const app = express();
 
@@ -33,7 +34,7 @@ app.use(
 app.use(express.json());
 
 /** REST notes API lives under /api so SPA routers can own browser-facing /notes/*. */
-app.use('/api/notes', notesRouter);
+app.use('/api/notes', requireFirebaseAuth, notesRouter);
 
 app.get('/health', (req, res) => {
     res.json({ status: 'ok' });

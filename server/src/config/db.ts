@@ -10,9 +10,20 @@ function requireEnv(name: string): string {
     return value;
 }
 
+/** Prefer WRIT_PASSWORD; POSTGRES_PASSWORD is an alternate name (e.g. some Postgres deployments). */
+function dbPassword(): string {
+    const value = process.env.WRIT_PASSWORD ?? process.env.POSTGRES_PASSWORD;
+    if (!value) {
+        throw new Error(
+            'Missing required environment variable: WRIT_PASSWORD (or POSTGRES_PASSWORD)',
+        );
+    }
+    return value;
+}
+
 const pool = new Pool({
     user: requireEnv('WRIT_USER'),
-    password: requireEnv('WRIT_PASSWORD'),
+    password: dbPassword(),
     host: process.env.PGHOST || 'localhost',
     port: Number(process.env.PGPORT) || 5432,
     database: requireEnv('PGDATABASE'),

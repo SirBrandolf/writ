@@ -5,6 +5,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import Notes from './Notes';
 import type { Note } from '../types/Note';
+import { auth } from '../auth/firebase';
 
 /** Markdown editor chunk loaded only when viewing a single note. */
 const OpenNote = lazy(() => import('./OpenNote'));
@@ -32,6 +33,15 @@ const NOTES_API = '/api/notes';
 /** Absolute or root-relative URL for API paths (empty API_BASE_URL ⇒ same origin + Vite proxy in dev). */
 function apiUrl(path: string): string {
    return `${API_BASE_URL}${path}`;
+}
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+   const user = auth?.currentUser ?? null;
+   if (!user) {
+      throw new Error('No authenticated user');
+   }
+   const token = await user.getIdToken();
+   return { Authorization: `Bearer ${token}` };
 }
 
 /** Shown when GET /api/notes/:id returns 404 (deleted or invalid deep link). */
@@ -153,7 +163,12 @@ function NoteDetail({ notes, setNotes, listLoading, listLoaded, onSave }: NoteDe
 
       let cancelled = false;
       setFetchingSingle(true);
-      fetch(apiUrl(`${NOTES_API}/${noteId}`))
+      getAuthHeaders()
+         .then((headers) =>
+            fetch(apiUrl(`${NOTES_API}/${noteId}`), {
+               headers,
+            }),
+         )
          .then(async (res) => {
             if (cancelled) return;
             if (res.status === 404) {
@@ -232,7 +247,12 @@ function LegacyNoteIdRedirect({ setNotes }: { setNotes: React.Dispatch<React.Set
       }
 
       let cancelled = false;
-      fetch(apiUrl(`${NOTES_API}/${noteId}`))
+      getAuthHeaders()
+         .then((headers) =>
+            fetch(apiUrl(`${NOTES_API}/${noteId}`), {
+               headers,
+            }),
+         )
          .then(async (res) => {
             if (cancelled) return;
             if (res.status === 404) {
@@ -281,7 +301,12 @@ export default function NotesApp() {
    useEffect(() => {
       setListError(null);
       setListLoading(true);
-      fetch(apiUrl(NOTES_API))
+      getAuthHeaders()
+         .then((headers) =>
+            fetch(apiUrl(NOTES_API), {
+               headers,
+            }),
+         )
          .then(async (res) => {
             const data: unknown = await res.json();
             if (!res.ok) {
@@ -313,7 +338,10 @@ export default function NotesApp() {
    const handleNewNote = useCallback(async () => {
       const res = await fetch(apiUrl(NOTES_API), {
          method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
+         headers: {
+            'Content-Type': 'application/json',
+            ...(await getAuthHeaders()),
+         },
          body: JSON.stringify(toApiWriteBody('', '')),
       });
       const payload: unknown = await res.json();
@@ -329,7 +357,10 @@ export default function NotesApp() {
    const handleSave = useCallback(async (id: string, title: string, content: string) => {
       const res = await fetch(apiUrl(`${NOTES_API}/${id}`), {
          method: 'PUT',
-         headers: { 'Content-Type': 'application/json' },
+         headers: {
+            'Content-Type': 'application/json',
+            ...(await getAuthHeaders()),
+         },
          body: JSON.stringify(toApiWriteBody(title, content)),
       });
       const payload: unknown = await res.json();
@@ -342,7 +373,10 @@ export default function NotesApp() {
    }, []);
 
    const handleDelete = useCallback(async (id: string): Promise<{ ok: true } | { ok: false; message: string }> => {
-      const res = await fetch(apiUrl(`${NOTES_API}/${id}`), { method: 'DELETE' });
+      const res = await fetch(apiUrl(`${NOTES_API}/${id}`), {
+         method: 'DELETE',
+         headers: await getAuthHeaders(),
+      });
 
       let payload: unknown = null;
       try {

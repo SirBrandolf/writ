@@ -1,4 +1,4 @@
-/** Compact header auth UI: email + sign out when signed in; links to login/sign up otherwise. */
+/** Compact header auth UI: sign out when signed in; links to login/sign up otherwise. */
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 
@@ -13,9 +13,9 @@ export default function AuthBar() {
   if (user) {
     return (
       <div className="flex items-center gap-3">
-        <span className="text-xs text-stone-500 truncate max-w-[12rem] tabular-nums" title={user.email ?? undefined}>
-          {user.email}
-        </span>
+        <Link to="/profile" className="text-xs text-stone-500 underline underline-offset-2 hover:text-stone-800">
+          Profile
+        </Link>
         <button
           type="button"
           onClick={() => {

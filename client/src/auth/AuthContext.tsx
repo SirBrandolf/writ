@@ -19,6 +19,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!auth) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u)
       setLoading(false)
@@ -26,7 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe()
   }, [])
 
-  const signOutUser = useCallback(() => signOut(auth), [])
+  const signOutUser = useCallback(async () => {
+    if (!auth) return
+    await signOut(auth)
+  }, [])
 
   const value = useMemo(
     () => ({
