@@ -1,11 +1,11 @@
-# HTTP on port 80: API on :5000, Vite preview on :5175.
+# HTTP on port 80: Express on :5000 (/health, /api/*), SPA on :5175 (/, /notes/*, etc.).
 # Requires writ-server and writ-client (or equivalent) running locally.
-# After switching browsers to http://YOUR_IP/, update Express CORS for that origin.
+# Add your real public origin to CORS_ORIGINS in /etc/app.env (e.g. https://your.domain).
 
 :80 {
 	@api {
 		path /health
-		path /notes /notes/*
+		path /api /api/*
 	}
 	handle @api {
 		reverse_proxy localhost:5000

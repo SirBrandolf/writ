@@ -1,5 +1,7 @@
 # Writ
 
+[![Live Site](https://img.shields.io/badge/Live%20Site-my.writnotes.ca-2ea44f?style=for-the-badge)](https://my.writnotes.ca/)
+
 Writ is a minimal web app for writing and organizing notes as Markdown. You sign in with email and password (Firebase Authentication), browse and search your notes on one screen, and open each note in an editor that renders Markdown and math (KaTeX) when you read it back. Notes are stored in your own PostgreSQL database behind a small REST API.
 
 ## Tech stack
